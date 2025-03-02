@@ -50,6 +50,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    'media_library.middleware.HTMLSiteMiddleware',
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -165,3 +166,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # TEMPLATE_LOADERS = (
 #     # 'django.template.loaders.app_directories.load_template_source',
 # )
+
+CORS_ALLOW_ALL_ORIGINS = True  # For development; restrict in production
+CORS_URLS_REGEX = r'^/media-library/html-site/.*$'
+
+# Content Security Policy
+CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", "'unsafe-eval'")
+CSP_FRAME_ANCESTORS = ("'self'",)
+CSP_INCLUDE_NONCE_IN = ['script-src']

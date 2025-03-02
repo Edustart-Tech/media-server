@@ -52,3 +52,10 @@ class MediaLibraryIntegration:
             'thumbnail_url': media.thumbnail.url if media.file_type == 'image' else None,
             'medium_url': media.medium.url if media.file_type == 'image' else None,
         }
+
+
+    @staticmethod
+    def get_html_site_url(media_id):
+        """Get URL for an HTML website"""
+        from django.urls import reverse
+        return reverse('media_library:serve_html_site', kwargs={'media_id': media_id})

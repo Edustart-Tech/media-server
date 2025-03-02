@@ -46,6 +46,7 @@ class MediaFile(models.Model):
     # For Verge3d files
     is_html = models.BooleanField(default=False, verbose_name="HTML Website")
     html_index_path = models.CharField(max_length=255, blank=True, editable=False)
+    html_base_dir = models.CharField(max_length=255, blank=True, editable=False)
     original_zip_path = models.CharField(max_length=255, blank=True, editable=False)
 
     # Processing status
