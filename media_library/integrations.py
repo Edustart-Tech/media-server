@@ -1,6 +1,7 @@
 # media_library/integrations.py
 from django.urls import reverse
-from .models import MediaFile
+from .models import MediaFile, MediaUsage
+
 
 class MediaLibraryIntegration:
     @staticmethod
@@ -59,3 +60,53 @@ class MediaLibraryIntegration:
         """Get URL for an HTML website"""
         from django.urls import reverse
         return reverse('media_library:serve_html_site', kwargs={'media_id': media_id})
+
+    @staticmethod
+    def track_media_usage(media_id, content_type, object_id, field_name, url=None):
+        """
+        Track where a media file is being used
+
+        Parameters:
+        - media_id: ID of the MediaFile
+        - content_type: Type of content (e.g. 'post', 'page', 'product')
+        - object_id: ID of the object where media is used
+        - field_name: Name of the field that references the media
+        - url: Optional URL where the media is displayed
+        """
+        try:
+            media = MediaFile.objects.get(pk=media_id)
+
+            # Create or update usage record
+            usage, created = MediaUsage.objects.update_or_create(
+                media=media,
+                content_type=content_type,
+                object_id=str(object_id),
+                field_name=field_name,
+                defaults={'url': url or ''}
+            )
+
+            return True
+        except MediaFile.DoesNotExist:
+            return False
+
+    @staticmethod
+    def remove_media_usage(media_id, content_type, object_id, field_name=None):
+        """
+        Remove a usage tracking record when media is no longer used
+
+        If field_name is None, removes all usage records for this object
+        """
+        try:
+            filters = {
+                'media_id': media_id,
+                'content_type': content_type,
+                'object_id': str(object_id),
+            }
+
+            if field_name:
+                filters['field_name'] = field_name
+
+            MediaUsage.objects.filter(**filters).delete()
+            return True
+        except Exception:
+            return False

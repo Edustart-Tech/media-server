@@ -45,6 +45,7 @@ def process_html_zip_file(media_id):
 
             # Find index.html (could be in the root or in a subdirectory)
             index_path = None
+            base_dir = None
             for root, dirs, files in os.walk(extract_dir):
                 if 'index.html' in files:
                     # Get the relative path to MEDIA_ROOT
@@ -60,11 +61,6 @@ def process_html_zip_file(media_id):
                 # Store the base directory of the HTML site
                 media.html_base_dir = base_dir
                 media.save(update_fields=['html_index_path', 'original_zip_path', 'html_base_dir'])
-
-                # Delete the zip file to save space
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-                    logger.info(f"Deleted original ZIP file: {file_path}")
             else:
                 logger.error(f"No index.html found in ZIP file: {file_path}")
 

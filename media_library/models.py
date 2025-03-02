@@ -35,8 +35,27 @@ class MediaCategory(models.Model):
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
 
+
+class MediaUsage(models.Model):
+    """Model to track where media files are used"""
+    media = models.ForeignKey('MediaFile', on_delete=models.CASCADE, related_name='usage_locations')
+    content_type = models.CharField(max_length=100, help_text="Type of content where media is used (e.g. post, page)")
+    object_id = models.CharField(max_length=100, help_text="ID of the object where media is used")
+    field_name = models.CharField(max_length=100, help_text="Field name that uses the media")
+    url = models.URLField(blank=True, help_text="External link to where media is used")
+    date_added = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Media Usage"
+        verbose_name_plural = "Media Usages"
+        unique_together = ('media', 'content_type', 'object_id', 'field_name')
+
+    def __str__(self):
+        return f"{self.media.title} used in {self.content_type} ({self.field_name})"
+
+
 class MediaFile(models.Model):
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=255, blank=True)
     file = models.FileField(upload_to=upload_to)
     file_type = models.CharField(max_length=100, editable=False)
     alt_text = models.CharField(max_length=255, blank=True)
@@ -80,25 +99,34 @@ class MediaFile(models.Model):
         return self.title
 
     def save(self, *args, **kwargs):
-        # Set file_type based on extension
-        extension = os.path.splitext(self.file.name)[1].lower()[1:]
+        # Set title from filename if not provided
+        if not self.title and self.file:
+            # Get filename without extension and path
+            filename = os.path.basename(self.file.name)
+            base_name, _ = os.path.splitext(filename)
+            # Convert to title case and replace underscores/hyphens with spaces
+            self.title = base_name.replace('_', ' ').replace('-', ' ').title()
 
-        image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp']
-        document_extensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx']
-        video_extensions = ['mp4', 'avi', 'mov', 'wmv']
-        audio_extensions = ['mp3', 'wav', 'ogg']
+        if self.file:
+            # Set file_type based on extension
+            extension = os.path.splitext(self.file.name)[1].lower()[1:]
 
-        if extension in image_extensions:
-            self.file_type = 'image'
-        elif extension in document_extensions:
-            self.file_type = 'document'
-        elif extension in video_extensions:
-            self.file_type = 'video'
-        elif extension in audio_extensions:
-            self.file_type = 'audio'
-        elif self.is_html and extension == 'zip':
-            self.file_type = 'html'
-        else:
-            self.file_type = 'other'
+            image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp']
+            document_extensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx']
+            video_extensions = ['mp4', 'avi', 'mov', 'wmv']
+            audio_extensions = ['mp3', 'wav', 'ogg']
+
+            if extension in image_extensions:
+                self.file_type = 'image'
+            elif extension in document_extensions:
+                self.file_type = 'document'
+            elif extension in video_extensions:
+                self.file_type = 'video'
+            elif extension in audio_extensions:
+                self.file_type = 'audio'
+            elif self.is_html and extension == 'zip':
+                self.file_type = 'html'
+            else:
+                self.file_type = 'other'
 
         super().save(*args, **kwargs)
