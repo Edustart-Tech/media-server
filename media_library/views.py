@@ -1,4 +1,5 @@
 # media_library/views.py
+from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -65,7 +66,10 @@ def media_upload(request):
 
 def media_detail(request, pk):
     media_file = get_object_or_404(MediaFile, pk=pk)
-    return render(request, 'media_library/media_detail.html', {'media_file': media_file})
+    return render(request, 'media_library/media_detail.html', {
+        'media_file': media_file,
+        'MEDIA_URL': settings.MEDIA_URL,
+    })
 
 @login_required
 def media_edit(request, pk):

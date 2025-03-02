@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     'media_library',
+    'media_library.templatetags',
     'imagekit',
     'django_cleanup.apps.CleanupConfig',
 ]

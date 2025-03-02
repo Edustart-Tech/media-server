@@ -1,5 +1,5 @@
+<!-- media_library/templates/media_library/media_upload.html -->
 {% extends 'media_library/base.html' %}
-{% load form_tags %}
 
 {% block title %}Upload Media{% endblock %}
 
@@ -23,6 +23,13 @@
                     {{ form.file.errors }}
                     <input type="file" name="{{ form.file.name }}" id="{{ form.file.id_for_label }}"
                           class="form-control">
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" name="{{ form.is_html.name }}" id="{{ form.is_html.id_for_label }}"
+                           class="form-check-input" {% if form.is_html.value %}checked{% endif %}>
+                    <label for="{{ form.is_html.id_for_label }}" class="form-check-label">HTML Website (ZIP file)</label>
+                    <div class="form-text">Check this if uploading a zip file containing a website with an index.html file</div>
                 </div>
 
                 <div class="mb-3">
