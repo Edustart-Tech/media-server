@@ -66,9 +66,12 @@ def media_upload(request):
 
 def media_detail(request, pk):
     media_file = get_object_or_404(MediaFile, pk=pk)
+    # Check if HTML file is still processing
+    processing = media_file.is_html and not media_file.html_index_path
     return render(request, 'media_library/media_detail.html', {
         'media_file': media_file,
         'MEDIA_URL': settings.MEDIA_URL,
+        'processing': processing,
     })
 
 @login_required

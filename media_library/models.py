@@ -5,6 +5,8 @@ import zipfile
 
 from django.conf import settings
 from django.db import models
+from django.db.models.signals import post_delete, post_save
+from django.dispatch import receiver
 from django.utils.text import slugify
 from django.utils import timezone
 from imagekit.models import ImageSpecField
@@ -45,6 +47,10 @@ class MediaFile(models.Model):
     is_html = models.BooleanField(default=False, verbose_name="HTML Website")
     html_index_path = models.CharField(max_length=255, blank=True, editable=False)
     original_zip_path = models.CharField(max_length=255, blank=True, editable=False)
+
+    # Processing status
+    is_processed = models.BooleanField(default=False, editable=False)
+    processing_error = models.TextField(blank=True, editable=False)
 
     # Auto-generated fields
     uploaded_at = models.DateTimeField(auto_now_add=True)
@@ -94,61 +100,4 @@ class MediaFile(models.Model):
         else:
             self.file_type = 'other'
 
-        # First save to ensure we have an ID and the file is stored
         super().save(*args, **kwargs)
-
-        # Handle HTML website upload (unzip)
-        if self.is_html and extension == 'zip' and not self.html_index_path:
-            # Store original zip path before extraction
-            self.original_zip_path = self.file.path
-            self._extract_html_website()
-            # Save again to store the html_index_path
-            super().save(update_fields=['html_index_path', 'original_zip_path'])
-
-            if os.path.exists(self.file.path):
-                os.remove(self.file.path)
-
-    def _extract_html_website(self):
-        """Extract the zip file and find the index.html file."""
-        if not self.file:
-            return
-
-        # Get the file path on the server
-        file_path = self.file.path
-
-        # Create extraction directory - use media_id to avoid conflicts
-        extract_dir = os.path.join(settings.MEDIA_ROOT, f'html_sites/{self.id}')
-        os.makedirs(extract_dir, exist_ok=True)
-
-        # Extract the zip file
-        with zipfile.ZipFile(file_path, 'r') as zip_ref:
-            zip_ref.extractall(extract_dir)
-
-        # Find index.html (could be in the root or in a subdirectory)
-        index_path = None
-        for root, dirs, files in os.walk(extract_dir):
-            if 'index.html' in files:
-                # Get the relative path to MEDIA_ROOT
-                rel_path = os.path.relpath(os.path.join(root, 'index.html'), settings.MEDIA_ROOT)
-                index_path = rel_path
-                break
-
-        # Store the path to index.html relative to MEDIA_URL
-        if index_path:
-            self.html_index_path = index_path
-        else:
-            # No index.html found
-            self.html_index_path = ''
-
-    def delete(self, *args, **kwargs):
-        """Override delete to clean up extracted website files."""
-        # Get the directory path
-        if self.is_html and self.id:
-            extract_dir = os.path.join(settings.MEDIA_ROOT, f'html_sites/{self.id}')
-            if os.path.exists(extract_dir):
-                # Remove the entire extracted directory
-                shutil.rmtree(extract_dir)
-
-        # Call the parent class's delete method
-        super().delete(*args, **kwargs)
-

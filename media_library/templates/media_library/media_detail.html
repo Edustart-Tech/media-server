@@ -28,15 +28,28 @@
                             <source src="{{ media_file.file.url }}" type="audio/mpeg">
                             Your browser does not support the audio tag.
                         </audio>
-                    {% elif media_file.file_type == 'html' and media_file.html_index_path %}
-                        <div class="ratio ratio-16x9" style="min-height: 500px;">
-                            <iframe src="{{ MEDIA_URL }}{{ media_file.html_index_path }}" allowfullscreen></iframe>
-                        </div>
-                        <div class="mt-3">
-                            <a href="{{ MEDIA_URL }}{{ media_file.html_index_path }}" class="btn btn-sm btn-primary" target="_blank">
-                                Open in New Tab
-                            </a>
-                        </div>
+                    {% elif media_file.file_type == 'html' %}
+                        {% if processing %}
+                            <div class="text-center p-5">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-3">Processing HTML website... Please check back in a moment.</p>
+                            </div>
+                        {% elif media_file.html_index_path %}
+                            <div class="ratio ratio-16x9" style="min-height: 500px;">
+                                <iframe src="{{ MEDIA_URL }}{{ media_file.html_index_path }}" allowfullscreen></iframe>
+                            </div>
+                            <div class="mt-3">
+                                <a href="{{ MEDIA_URL }}{{ media_file.html_index_path }}" class="btn btn-sm btn-primary" target="_blank">
+                                    Open in New Tab
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="text-center p-5 text-danger">
+                                <p>Error processing HTML website. The ZIP file may not contain an index.html file.</p>
+                            </div>
+                        {% endif %}
                     {% elif media_file.file_type == 'document' %}
                         <div class="text-center p-5">
                             <span class="file-icon">📄</span>
@@ -118,13 +131,18 @@
 
             {% if media_file.file_type == 'html' and media_file.html_index_path %}
                 <div class="card mt-3">
-                    <div class="card-header">Website URLs</div>
+                    <div class="card-header">Website Information</div>
                     <div class="card-body">
-                        <h6>Index HTML:</h6>
-                        <input type="text" class="form-control mb-2" value="{{ MEDIA_URL }}{{ media_file.html_index_path }}" readonly onclick="this.select()">
+                        {% if processing %}
+                            <p class="text-info">Website is being processed...</p>
+                        {% elif media_file.html_index_path %}
+                            <h6>Index HTML:</h6>
+                            <input type="text" class="form-control mb-2" value="{{ MEDIA_URL }}{{ media_file.html_index_path }}" readonly onclick="this.select()">
 
-                        <h6>ZIP File:</h6>
-                        <input type="text" class="form-control mb-2" value="{{ media_file.file.url }}" readonly onclick="this.select()">
+                            <p class="text-muted small">Original ZIP file was deleted after extraction.</p>
+                        {% else %}
+                            <p class="text-danger">Failed to extract index.html from the ZIP file.</p>
+                        {% endif %}
                     </div>
                 </div>
             {% endif %}
