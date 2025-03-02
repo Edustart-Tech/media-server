@@ -1,5 +1,6 @@
 # media_library/models.py
 import os
+import shutil
 import zipfile
 
 from django.conf import settings
@@ -43,6 +44,7 @@ class MediaFile(models.Model):
     # For Verge3d files
     is_html = models.BooleanField(default=False, verbose_name="HTML Website")
     html_index_path = models.CharField(max_length=255, blank=True, editable=False)
+    original_zip_path = models.CharField(max_length=255, blank=True, editable=False)
 
     # Auto-generated fields
     uploaded_at = models.DateTimeField(auto_now_add=True)
@@ -97,9 +99,14 @@ class MediaFile(models.Model):
 
         # Handle HTML website upload (unzip)
         if self.is_html and extension == 'zip' and not self.html_index_path:
+            # Store original zip path before extraction
+            self.original_zip_path = self.file.path
             self._extract_html_website()
             # Save again to store the html_index_path
-            super().save(update_fields=['html_index_path'])
+            super().save(update_fields=['html_index_path', 'original_zip_path'])
+
+            if os.path.exists(self.file.path):
+                os.remove(self.file.path)
 
     def _extract_html_website(self):
         """Extract the zip file and find the index.html file."""
@@ -132,3 +139,16 @@ class MediaFile(models.Model):
         else:
             # No index.html found
             self.html_index_path = ''
+
+    def delete(self, *args, **kwargs):
+        """Override delete to clean up extracted website files."""
+        # Get the directory path
+        if self.is_html and self.id:
+            extract_dir = os.path.join(settings.MEDIA_ROOT, f'html_sites/{self.id}')
+            if os.path.exists(extract_dir):
+                # Remove the entire extracted directory
+                shutil.rmtree(extract_dir)
+
+        # Call the parent class's delete method
+        super().delete(*args, **kwargs)
+
