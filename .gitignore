@@ -1,0 +1,4 @@
+/media
+.idea
+.venv
+/db.sqlite3

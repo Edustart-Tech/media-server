@@ -1,0 +1,118 @@
+{% extends 'media_library/base.html' %}
+
+{% block title %}Media Library{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Media Library</h1>
+        <a href="{% url 'media_library:media_upload' %}" class="btn btn-primary">Upload New</a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" name="q" class="form-control" placeholder="Search..." value="{{ query }}">
+                </div>
+                <div class="col-md-3">
+                    <select name="type" class="form-select">
+                        <option value="">All Types</option>
+                        <option value="image" {% if file_type == 'image' %}selected{% endif %}>Images</option>
+                        <option value="document" {% if file_type == 'document' %}selected{% endif %}>Documents</option>
+                        <option value="video" {% if file_type == 'video' %}selected{% endif %}>Videos</option>
+                        <option value="audio" {% if file_type == 'audio' %}selected{% endif %}>Audio</option>
+                        <option value="other" {% if file_type == 'other' %}selected{% endif %}>Other</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="category" class="form-select">
+                        <option value="">All Categories</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat.slug }}" {% if category == cat.slug %}selected{% endif %}>{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-secondary w-100">Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if page_obj %}
+        <div class="media-grid">
+            {% for media in page_obj %}
+                <div class="media-item">
+                    <a href="{% url 'media_library:media_detail' pk=media.pk %}">
+                        {% if media.file_type == 'image' %}
+                            <img src="{{ media.thumbnail.url }}" alt="{{ media.alt_text }}">
+                        {% elif media.file_type == 'document' %}
+                            <span class="file-icon">📄</span>
+                        {% elif media.file_type == 'video' %}
+                            <span class="file-icon">🎬</span>
+                        {% elif media.file_type == 'audio' %}
+                            <span class="file-icon">🔊</span>
+                        {% else %}
+                            <span class="file-icon">📁</span>
+                        {% endif %}
+                        <div class="title">{{ media.title }}</div>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if page_obj.has_other_pages %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if query %}&q={{ query }}{% endif %}{% if file_type %}&type={{ file_type }}{% endif %}{% if category %}&category={{ category }}{% endif %}">First</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if file_type %}&type={{ file_type }}{% endif %}{% if category %}&category={{ category }}{% endif %}">Previous</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">First</span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">Previous</span>
+                        </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if file_type %}&type={{ file_type }}{% endif %}{% if category %}&category={{ category }}{% endif %}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if file_type %}&type={{ file_type }}{% endif %}{% if category %}&category={{ category }}{% endif %}">Next</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if file_type %}&type={{ file_type }}{% endif %}{% if category %}&category={{ category }}{% endif %}">Last</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">Next</span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">Last</span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info">
+            No media files found. <a href="{% url 'media_library:media_upload' %}">Upload new media</a>.
+        </div>
+    {% endif %}
+{% endblock %}

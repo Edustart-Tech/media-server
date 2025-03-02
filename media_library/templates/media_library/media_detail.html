@@ -1,0 +1,105 @@
+{% extends 'media_library/base.html' %}
+
+{% block title %}{{ media_file.title }}{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ media_file.title }}</h1>
+        <div>
+            <a href="{% url 'media_library:media_edit' pk=media_file.pk %}" class="btn btn-outline-primary">Edit</a>
+            <a href="{% url 'media_library:media_delete' pk=media_file.pk %}" class="btn btn-outline-danger">Delete</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body text-center">
+                    {% if media_file.file_type == 'image' %}
+                        <img src="{{ media_file.file.url }}" alt="{{ media_file.alt_text }}" class="img-fluid">
+                    {% elif media_file.file_type == 'video' %}
+                        <video controls class="w-100">
+                            <source src="{{ media_file.file.url }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    {% elif media_file.file_type == 'audio' %}
+                        <audio controls class="w-100">
+                            <source src="{{ media_file.file.url }}" type="audio/mpeg">
+                            Your browser does not support the audio tag.
+                        </audio>
+                    {% elif media_file.file_type == 'document' %}
+                        <div class="text-center p-5">
+                            <span class="file-icon">📄</span>
+                            <p>Document: <a href="{{ media_file.file.url }}" target="_blank">Download</a></p>
+                        </div>
+                    {% else %}
+                        <div class="text-center p-5">
+                            <span class="file-icon">📁</span>
+                            <p>File: <a href="{{ media_file.file.url }}" target="_blank">Download</a></p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header">File Information</div>
+                <div class="card-body">
+                    <dl>
+                        <dt>Title</dt>
+                        <dd>{{ media_file.title }}</dd>
+
+                        <dt>File Type</dt>
+                        <dd>{{ media_file.file_type|title }}</dd>
+
+                        <dt>Uploaded</dt>
+                        <dd>{{ media_file.uploaded_at }}</dd>
+
+                        <dt>Last Modified</dt>
+                        <dd>{{ media_file.updated_at }}</dd>
+
+                        {% if media_file.file_type == 'image' %}
+                            <dt>Dimensions</dt>
+                            <dd>{{ media_file.width }} × {{ media_file.height }}</dd>
+                        {% endif %}
+
+                        <dt>Alt Text</dt>
+                        <dd>{{ media_file.alt_text|default:"None" }}</dd>
+
+                        <dt>Categories</dt>
+                        <dd>
+                            {% for category in media_file.categories.all %}
+                                <a href="{% url 'media_library:media_category' slug=category.slug %}" class="badge bg-secondary text-decoration-none">{{ category.name }}</a>
+                            {% empty %}
+                                Uncategorized
+                            {% endfor %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Description</div>
+                <div class="card-body">
+                    {{ media_file.description|linebreaks|default:"No description provided." }}
+                </div>
+            </div>
+
+            {% if media_file.file_type == 'image' %}
+                <div class="card mt-3">
+                    <div class="card-header">Usage</div>
+                    <div class="card-body">
+                        <h6>Full size URL:</h6>
+                        <input type="text" class="form-control mb-2" value="{{ media_file.file.url }}" readonly onclick="this.select()">
+
+                        <h6>Thumbnail URL:</h6>
+                        <input type="text" class="form-control mb-2" value="{{ media_file.thumbnail.url }}" readonly onclick="this.select()">
+
+                        <h6>Medium URL:</h6>
+                        <input type="text" class="form-control" value="{{ media_file.medium.url }}" readonly onclick="this.select()">
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

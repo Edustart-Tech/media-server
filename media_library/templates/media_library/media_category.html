@@ -1,0 +1,87 @@
+{% extends 'media_library/base.html' %}
+
+{% block title %}Category: {{ category.name }}{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Category: {{ category.name }}</h1>
+        <a href="{% url 'media_library:media_upload' %}" class="btn btn-primary">Upload New</a>
+    </div>
+
+    {% if page_obj %}
+        <div class="media-grid">
+            {% for media in page_obj %}
+                <div class="media-item">
+                    <a href="{% url 'media_library:media_detail' pk=media.pk %}">
+                        {% if media.file_type == 'image' %}
+                            <img src="{{ media.thumbnail.url }}" alt="{{ media.alt_text }}">
+                        {% elif media.file_type == 'document' %}
+                            <span class="file-icon">📄</span>
+                        {% elif media.file_type == 'video' %}
+                            <span class="file-icon">🎬</span>
+                        {% elif media.file_type == 'audio' %}
+                            <span class="file-icon">🔊</span>
+                        {% else %}
+                            <span class="file-icon">📁</span>
+                        {% endif %}
+                        <div class="title">{{ media.title }}</div>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if page_obj.has_other_pages %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1">First</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">First</span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">Previous</span>
+                        </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">Next</span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">Last</span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info">
+            No media files found in this category.
+        </div>
+    {% endif %}
+{% endblock %}

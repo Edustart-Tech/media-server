@@ -1,0 +1,35 @@
+{% extends 'media_library/base.html' %}
+
+{% block title %}Delete {{ media_file.title }}{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-body text-center">
+            <h1 class="card-title text-danger">Delete Media</h1>
+
+            <p class="lead">Are you sure you want to delete "{{ media_file.title }}"?</p>
+
+            <div class="mb-4">
+                {% if media_file.file_type == 'image' %}
+                    <img src="{{ media_file.thumbnail.url }}" alt="{{ media_file.alt_text }}" class="img-thumbnail">
+                {% elif media_file.file_type == 'video' %}
+                    <span class="file-icon">🎬</span>
+                {% elif media_file.file_type == 'audio' %}
+                    <span class="file-icon">🔊</span>
+                {% elif media_file.file_type == 'document' %}
+                    <span class="file-icon">📄</span>
+                {% else %}
+                    <span class="file-icon">📁</span>
+                {% endif %}
+            </div>
+
+            <p class="text-danger">This action cannot be undone!</p>
+
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Delete</button>
+                <a href="{% url 'media_library:media_detail' pk=media_file.pk %}" class="btn btn-outline-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+{% endblock %}
