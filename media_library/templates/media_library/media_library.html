@@ -5,12 +5,23 @@
 {% block content %}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Media Library</h1>
+        {% if not request.GET.popup %}
         <a href="{% url 'media_library:media_upload' %}" class="btn btn-primary">Upload New</a>
+        {% endif %}
     </div>
 
+    <!-- Filter form -->
     <div class="card mb-4">
         <div class="card-body">
             <form method="get" class="row g-3">
+                {% if request.GET.popup %}
+                <input type="hidden" name="popup" value="1">
+                {% endif %}
+                {% if request.GET.field_id %}
+                <input type="hidden" name="field_id" value="{{ request.GET.field_id }}">
+                {% endif %}
+
+                <!-- Existing filter fields -->
                 <div class="col-md-4">
                     <input type="text" name="q" class="form-control" placeholder="Search..." value="{{ query }}">
                 </div>
@@ -20,8 +31,8 @@
                         <option value="image" {% if file_type == 'image' %}selected{% endif %}>Images</option>
                         <option value="document" {% if file_type == 'document' %}selected{% endif %}>Documents</option>
                         <option value="video" {% if file_type == 'video' %}selected{% endif %}>Videos</option>
-                        <option value="html" {% if file_type == 'html' %}selected{% endif %}>Html</option>
                         <option value="audio" {% if file_type == 'audio' %}selected{% endif %}>Audio</option>
+                        <option value="html" {% if file_type == 'html' %}selected{% endif %}>HTML</option>
                         <option value="other" {% if file_type == 'other' %}selected{% endif %}>Other</option>
                     </select>
                 </div>
@@ -44,7 +55,14 @@
         <div class="media-grid">
             {% for media in page_obj %}
                 <div class="media-item">
-                    <a href="{% url 'media_library:media_detail' pk=media.pk %}">
+                    {% if request.GET.popup %}
+                        <a href="#"
+                           data-media-id="{{ media.id }}"
+                           data-media-url="{{ request.scheme }}://{{ request.get_host }}{{ media.file.url }}"
+                           data-media-type="{{ media.file_type }}">
+                    {% else %}
+                        <a href="{% url 'media_library:media_detail' pk=media.pk %}">
+                    {% endif %}
                         {% if media.file_type == 'image' %}
                             <img src="{{ media.thumbnail.url }}" alt="{{ media.alt_text }}">
                         {% elif media.file_type == 'document' %}
@@ -53,6 +71,8 @@
                             <span class="file-icon">🎬</span>
                         {% elif media.file_type == 'audio' %}
                             <span class="file-icon">🔊</span>
+                        {% elif media.file_type == 'html' %}
+                            <span class="file-icon">🌐</span>
                         {% else %}
                             <span class="file-icon">📁</span>
                         {% endif %}
@@ -62,15 +82,16 @@
             {% endfor %}
         </div>
 
+        <!-- Pagination controls -->
         {% if page_obj.has_other_pages %}
             <nav class="mt-4">
                 <ul class="pagination justify-content-center">
                     {% if page_obj.has_previous %}
                         <li class="page-item">
-                            <a class="page-link" href="?page=1{% if query %}&q={{ query }}{% endif %}{% if file_type %}&type={{ file_type }}{% endif %}{% if category %}&category={{ category }}{% endif %}">First</a>
+                            <a class="page-link" href="?page=1{% if request.GET.popup %}&popup=1{% endif %}{% if request.GET.field_id %}&field_id={{ request.GET.field_id }}{% endif %}{% if query %}&q={{ query }}{% endif %}{% if file_type %}&type={{ file_type }}{% endif %}{% if category %}&category={{ category }}{% endif %}">First</a>
                         </li>
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if file_type %}&type={{ file_type }}{% endif %}{% if category %}&category={{ category }}{% endif %}">Previous</a>
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.popup %}&popup=1{% endif %}{% if request.GET.field_id %}&field_id={{ request.GET.field_id }}{% endif %}{% if query %}&q={{ query }}{% endif %}{% if file_type %}&type={{ file_type }}{% endif %}{% if category %}&category={{ category }}{% endif %}">Previous</a>
                         </li>
                     {% else %}
                         <li class="page-item disabled">
@@ -88,7 +109,7 @@
                             </li>
                         {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if file_type %}&type={{ file_type }}{% endif %}{% if category %}&category={{ category }}{% endif %}">{{ num }}</a>
+                                <a class="page-link" href="?page={{ num }}{% if request.GET.popup %}&popup=1{% endif %}{% if request.GET.field_id %}&field_id={{ request.GET.field_id }}{% endif %}{% if query %}&q={{ query }}{% endif %}{% if file_type %}&type={{ file_type }}{% endif %}{% if category %}&category={{ category }}{% endif %}">{{ num }}</a>
                             </li>
                         {% endif %}
                     {% endfor %}
@@ -113,7 +134,55 @@
         {% endif %}
     {% else %}
         <div class="alert alert-info">
-            No media files found. <a href="{% url 'media_library:media_upload' %}">Upload new media</a>.
+            No media files found.
+            {% if not request.GET.popup %}
+            <a href="{% url 'media_library:media_upload' %}">Upload new media</a>.
+            {% endif %}
         </div>
+    {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+    {% if request.GET.popup %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle media selection in popup mode
+            var mediaItems = document.querySelectorAll('.media-item a');
+            var fieldId = "{{ request.GET.field_id|escapejs }}";
+
+            mediaItems.forEach(function(item) {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+
+                    // Get media details
+                    var mediaId = this.getAttribute('data-media-id');
+                    var mediaUrl = this.getAttribute('data-media-url');
+                    var mediaType = this.getAttribute('data-media-type');
+
+                    // Send message to parent window
+                    if (window.opener) {
+                        // If opened in a new window
+                        window.opener.postMessage(JSON.stringify({
+                            action: 'select_media',
+                            field_id: fieldId,
+                            id: mediaId,
+                            url: mediaUrl,
+                            type: mediaType
+                        }), '*');
+                        window.close();
+                    } else {
+                        // If opened in an iframe
+                        window.parent.postMessage(JSON.stringify({
+                            action: 'select_media',
+                            field_id: fieldId,
+                            id: mediaId,
+                            url: mediaUrl,
+                            type: mediaType
+                        }), '*');
+                    }
+                });
+            });
+        });
+    </script>
     {% endif %}
 {% endblock %}

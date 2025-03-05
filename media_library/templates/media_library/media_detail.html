@@ -107,6 +107,11 @@
                                 Uncategorized
                             {% endfor %}
                         </dd>
+
+                        <dt>Link</dt>
+                        <dd>
+                            {{ request.scheme }}://{{ request.get_host }}{{ media_file.file.url }}
+                        </dd>
                     </dl>
                 </div>
             </div>
@@ -167,7 +172,10 @@
                             <h6>Index HTML:</h6>
                             <input type="text" class="form-control mb-2" value="{{ MEDIA_URL }}{{ media_file.html_index_path }}" readonly onclick="this.select()">
 
+                            <h6>HTML Site URL:</h6>
+                            <input type="text" class="form-control mb-2" value="{% url 'media_library:serve_html_site' media_id=media_file.id %}" readonly onclick="this.select()">
                             <p class="text-muted small">Original ZIP file was deleted after extraction.</p>
+
                         {% else %}
                             <p class="text-danger">Failed to extract index.html from the ZIP file.</p>
                         {% endif %}

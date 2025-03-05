@@ -41,11 +41,13 @@ INSTALLED_APPS = [
     'media_library',
     'media_library.templatetags',
     'imagekit',
+    'corsheaders',
     'django_cleanup.apps.CleanupConfig',
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    'corsheaders.middleware.CorsMiddleware',
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -171,8 +173,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOW_ALL_ORIGINS = True  # For development; restrict in production
 CORS_URLS_REGEX = r'^/media-library/html-site/.*$'
+CORS_ALLOW_CREDENTIALS = True
 
 # Content Security Policy
 CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", "'unsafe-eval'")
 CSP_FRAME_ANCESTORS = ("'self'",)
 CSP_INCLUDE_NONCE_IN = ['script-src']
+
+X_FRAME_OPTIONS = "ALLOWALL"
