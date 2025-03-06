@@ -22,6 +22,8 @@ def media_library(request):
     query = request.GET.get('q', '')
     file_type = request.GET.get('type', '')
     category = request.GET.get('category', '')
+    allowed_types = request.GET.get('allowed_types', '')
+
 
     # Start with all media files
     media_files = MediaFile.objects.all().order_by('-uploaded_at')
@@ -39,6 +41,10 @@ def media_library(request):
 
     if category:
         media_files = media_files.filter(categories__slug=category)
+
+    if allowed_types:
+        allowed_types = allowed_types.split(',')
+        media_files = media_files.filter(file_type__in=allowed_types)
 
     # Pagination
     paginator = Paginator(media_files, 24)  # 24 items per page
@@ -58,7 +64,6 @@ def media_library(request):
 
     return render(request, 'media_library/media_library.html', context)
 
-@login_required
 def media_upload(request):
     if request.method == 'POST':
         form = MediaFileForm(request.POST, request.FILES)

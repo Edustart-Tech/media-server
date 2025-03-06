@@ -6,7 +6,7 @@ from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
 from django.db.models import Q
 import json
-from .models import MediaFile, MediaUsage
+from .models import MediaCategory, MediaFile, MediaUsage
 
 @csrf_exempt
 @require_POST
@@ -246,5 +246,100 @@ def media_detail(request, pk):
         }, status=404)
     except Exception as e:
         return JsonResponse({
+            'error': str(e)
+        }, status=500)
+
+
+@csrf_exempt
+def category_list(request):
+    """API endpoint to get a list of all categories."""
+    try:
+        categories = MediaCategory.objects.all().order_by('name')
+        results = [
+            {
+                'id': category.id,
+                'name': category.name,
+                'slug': category.slug
+            }
+            for category in categories
+        ]
+
+        return JsonResponse({
+            'count': len(results),
+            'results': results
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'error': str(e)
+        }, status=500)
+
+@csrf_exempt
+@require_POST
+def upload_media(request):
+    """API endpoint to upload a new media file."""
+    try:
+        # Get form data
+        title = request.POST.get('title', '')
+        file = request.FILES.get('file')
+        alt_text = request.POST.get('alt_text', '')
+        is_html = request.POST.get('is_html') == 'true'
+        categories = request.POST.getlist('categories')
+        # Validate file
+        if not file:
+            return JsonResponse({
+                'success': False,
+                'error': 'No file provided'
+            }, status=400)
+
+        # Create media file
+        media_file = MediaFile(
+            title=title or file.name,  # Use filename if no title provided
+            file=file,
+            alt_text=alt_text,
+            is_html=is_html
+        )
+
+        # Save the file
+        media_file.save()
+
+        # Add categories
+        if categories:
+            for category_id in categories:
+                try:
+                    category = MediaCategory.objects.get(pk=category_id)
+                    media_file.categories.add(category)
+                except MediaCategory.DoesNotExist:
+                    pass
+
+        # Build response with URLs
+        response_data = {
+            'success': True,
+            'id': media_file.id,
+            'title': media_file.title,
+            'url': request.build_absolute_uri(media_file.file.url),
+            'file_type': media_file.file_type,
+        }
+
+        # Add thumbnail URLs for images
+        if media_file.file_type == 'image':
+            response_data.update({
+                'thumbnail_url': request.build_absolute_uri(media_file.thumbnail.url),
+                'medium_url': request.build_absolute_uri(media_file.medium.url),
+            })
+
+        # If HTML website, start processing in background
+        if is_html and media_file.file.name.lower().endswith('.zip'):
+            from .tasks import process_html_zip_file
+            process_html_zip_file.send(media_file.id)
+            response_data['message'] = 'HTML website is being processed'
+
+        return JsonResponse(response_data)
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
             'error': str(e)
         }, status=500)

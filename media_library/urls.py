@@ -19,4 +19,6 @@ urlpatterns = [
     path('api/remove-usage/', api_views.remove_media_usage, name='api_remove_usage'),
     path('api/media-list/', api_views.media_list, name='api_media_list'),
     path('api/media-detail/<int:pk>/', api_views.media_detail, name='api_media_detail'),
+    path('api/categories/', api_views.category_list, name='api_category_list'),
+    path('api/upload-media/', api_views.upload_media, name='api_upload_media'),
 ]

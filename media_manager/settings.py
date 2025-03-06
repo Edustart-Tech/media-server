@@ -42,14 +42,26 @@ INSTALLED_APPS = [
     'media_library.templatetags',
     'imagekit',
     'corsheaders',
+    "rest_framework",
+    "rest_framework.authtoken",
     'django_cleanup.apps.CleanupConfig',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+}
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     'corsheaders.middleware.CorsMiddleware',
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+    # 'media_manager.middleware.APICSRFMiddleware',
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     'media_library.middleware.HTMLSiteMiddleware',
@@ -154,6 +166,9 @@ AUTH_USER_MODEL = 'media_library.User'
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = "static/"
+STATICFILES_DIRS = [
+    BASE_DIR / "project_static",
+]
 
 # Media settings
 MEDIA_URL = '/media/'
@@ -174,10 +189,32 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CORS_ALLOW_ALL_ORIGINS = True  # For development; restrict in production
 CORS_URLS_REGEX = r'^/media-library/html-site/.*$'
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+# Allow all headers
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 # Content Security Policy
 CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", "'unsafe-eval'")
 CSP_FRAME_ANCESTORS = ("'self'",)
 CSP_INCLUDE_NONCE_IN = ['script-src']
+
 
 X_FRAME_OPTIONS = "ALLOWALL"
