@@ -61,7 +61,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    # 'media_manager.middleware.APICSRFMiddleware',
+    'media_manager.middleware.CrossOriginOpenerPolicyMiddleware',
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     'media_library.middleware.HTMLSiteMiddleware',

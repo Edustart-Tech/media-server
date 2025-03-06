@@ -1,8 +1,14 @@
 # media_library/urls.py
-from django.urls import path, re_path
+from django.urls import include, path, re_path
+from rest_framework import routers
+
 from . import api_views, views
 
 app_name = 'media_library'
+
+router = routers.DefaultRouter()
+router.register(r'api/media-file', api_views.MediaFileViewSet, basename='api-media-file')
+
 
 urlpatterns = [
     path('', views.media_library, name='media_library'),
@@ -21,4 +27,5 @@ urlpatterns = [
     path('api/media-detail/<int:pk>/', api_views.media_detail, name='api_media_detail'),
     path('api/categories/', api_views.category_list, name='api_category_list'),
     path('api/upload-media/', api_views.upload_media, name='api_upload_media'),
+    path("", include(router.urls)),
 ]
