@@ -150,6 +150,12 @@ class MediaFile(models.Model):
     def __str__(self):
         return self.title
 
+    @classmethod
+    def get_media_by_url(cls, media_url):
+        if media_url.endswith('.html'):
+            return cls.objects.get(html_index_path=media_url)
+        return cls.objects.get(file=media_url)
+
     def save(self, *args, **kwargs):
         # Set title from filename if not provided
         if not self.title and self.file:

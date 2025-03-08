@@ -1,4 +1,5 @@
 # media_library/api_views.py
+from django.conf import settings
 from django.http import JsonResponse
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
@@ -113,7 +114,7 @@ def track_media_usage(request):
         data = json.loads(request.body)
 
         # Validate required fields
-        required_fields = ['media_id', 'content_type', 'object_id', 'field_name']
+        required_fields = ['media_url', 'content_type', 'object_id', 'field_name']
         if not all(field in data for field in required_fields):
             return JsonResponse({
                 'success': False,
@@ -122,7 +123,10 @@ def track_media_usage(request):
 
         # Get media file
         try:
-            media = MediaFile.objects.get(pk=data['media_id'])
+            base_url = request.build_absolute_uri(settings.MEDIA_URL)
+            media_url = data['media_url'].lstrip(base_url)
+            media = MediaFile.get_media_by_url(media_url)
+            print(f"====> FOUND MEDIA URL ===== {media}")
         except MediaFile.DoesNotExist:
             return JsonResponse({
                 'success': False,
@@ -173,7 +177,7 @@ def remove_media_usage(request):
         data = json.loads(request.body)
 
         # Validate required fields
-        required_fields = ['media_id', 'content_type', 'object_id']
+        required_fields = ['media_url', 'content_type', 'object_id']
         if not all(field in data for field in required_fields):
             return JsonResponse({
                 'success': False,
@@ -182,17 +186,21 @@ def remove_media_usage(request):
 
         # Build filter params
         filters = {
-            'media_id': data['media_id'],
             'content_type': data['content_type'],
             'object_id': data['object_id'],
         }
-
         # Add field name filter if provided
         if 'field_name' in data:
             filters['field_name'] = data['field_name']
-
-        # Delete matching usage records
-        deleted, _ = MediaUsage.objects.filter(**filters).delete()
+        try:
+            base_url = request.build_absolute_uri(settings.MEDIA_URL)
+            media_url = data['media_url'].lstrip(base_url)
+            media = MediaFile.get_media_by_url(media_url)
+            filters['media'] = media
+            # Delete matching usage records
+            deleted, _ = MediaUsage.objects.filter(**filters).delete()
+        except MediaFile.DoesNotExist:
+            deleted = 0
 
         return JsonResponse({
             'success': True,
