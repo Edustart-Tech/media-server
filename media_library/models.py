@@ -147,6 +147,9 @@ class MediaFile(models.Model):
         options={'quality': 85}
     )
 
+    class Meta:
+        ordering = ['-uploaded_at']
+
     def __str__(self):
         return self.title
 

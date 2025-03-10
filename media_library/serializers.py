@@ -1,10 +1,12 @@
 from rest_framework import serializers
 
-from media_library.models import MediaFile
+from media_library.models import MediaCategory, MediaFile
 
 
 class MediaFileSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField(method_name='get_url')
+    category_name = serializers.CharField(required=False, allow_blank=True, write_only=True)
+
     class Meta:
         model = MediaFile
         fields = "__all__"
@@ -29,5 +31,12 @@ class MediaFileSerializer(serializers.ModelSerializer):
             return None
         return request.build_absolute_uri(obj.file.url)
 
+    def validate(self, attrs):
+        attrs.pop("category_name", None)
+        return super().validate(attrs)
 
-
+    def save(self, **kwargs):
+        instance = super().save(**kwargs)
+        if category_name := self.initial_data.get("category_name"):
+            category, _ = MediaCategory.objects.get_or_create(name=category_name)
+            instance.categories.add(category)

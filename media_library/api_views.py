@@ -10,8 +10,9 @@ import json
 
 from rest_framework.decorators import action
 from rest_framework import viewsets
+from rest_framework.exceptions import ValidationError
 
-
+from .filterset import MediaFileFilter
 from .models import MediaCategory, MediaFile, MediaUsage
 from .serializers import MediaFileSerializer
 
@@ -19,6 +20,8 @@ from .serializers import MediaFileSerializer
 class MediaFileViewSet(viewsets.ModelViewSet):
     queryset = MediaFile.objects.all()
     serializer_class = MediaFileSerializer
+    filterset_class = MediaFileFilter
+    search_fields = ['title', 'file', "file_type", "html_index_path"]
 
 
 
