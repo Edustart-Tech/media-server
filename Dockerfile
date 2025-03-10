@@ -23,4 +23,5 @@ RUN python manage.py collectstatic --noinput
 EXPOSE 8000
 
 # Start the application using Gunicorn
-CMD ["gunicorn", "media_manager.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+#CMD ["gunicorn", "media_manager.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
