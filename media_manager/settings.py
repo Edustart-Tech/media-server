@@ -43,7 +43,8 @@ SECRET_KEY = "django-insecure-bd2ewqjjj^lo@d2_vfnh%dfywj&pk0(hnoer@xo0d*#4)lc#@q
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = []
+ALLOWED_HOSTS = read_env("ALLOWED_HOSTS", [], list)
 
 
 # Application definition
@@ -253,4 +254,10 @@ CSP_FRAME_ANCESTORS = ("'self'",)
 CSP_INCLUDE_NONCE_IN = ['script-src']
 
 
+SESSION_COOKIE_SECURE = read_env("SESSION_COOKIE_SECURE", False, bool)
+CSRF_COOKIE_SECURE = read_env("CSRF_COOKIE_SECURE", False, bool)
+CSRF_TRUSTED_ORIGINS = read_env("CSRF_TRUSTED_ORIGINS", [], list)
+
+
 X_FRAME_OPTIONS = "ALLOWALL"
+
