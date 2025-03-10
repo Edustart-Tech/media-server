@@ -204,6 +204,7 @@ STATIC_URL = "static/"
 STATICFILES_DIRS = [
     BASE_DIR / "project_static",
 ]
+STATIC_ROOT = BASE_DIR / "static/"
 
 # Media settings
 MEDIA_URL = '/media/'
