@@ -160,7 +160,7 @@ AUTH_PASSWORD_VALIDATORS = [
 DRAMATIQ_BROKER = {
     "BROKER": "dramatiq.brokers.redis.RedisBroker",
     "OPTIONS": {
-        "url": "redis://localhost:6379/0",
+        "url": read_env("REDIS_SERVER", default="redis://localhost:6379/0"),
     },
     "MIDDLEWARE": [
         "dramatiq.middleware.AgeLimit",
@@ -176,7 +176,7 @@ DRAMATIQ_BROKER = {
 DRAMATIQ_RESULT_BACKEND = {
     "BACKEND": "dramatiq.results.backends.redis.RedisBackend",
     "BACKEND_OPTIONS": {
-        "url": "redis://localhost:6379/0",
+        "url": read_env("REDIS_SERVER", default="redis://localhost:6379/0"),
     },
     "MIDDLEWARE_OPTIONS": {
         "result_ttl": 60000  # 1 minute
