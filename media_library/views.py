@@ -60,6 +60,7 @@ def media_library(request):
         'query': query,
         'file_type': file_type,
         'category': category,
+        'MEDIA_URL': settings.MEDIA_URL,
     }
 
     return render(request, 'media_library/media_library.html', context)
