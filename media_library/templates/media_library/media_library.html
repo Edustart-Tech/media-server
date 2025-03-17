@@ -58,7 +58,7 @@
                     {% if request.GET.popup %}
                         <a href="#"
                            data-media-id="{{ media.id }}"
-                           data-media-url="{{ request.scheme }}://{{ request.get_host }}{%  if media.is_html %}{{ MEDIA_URL }}{{ media.html_index_path }}{% else %}{{ media.file.url }}{% endif %}"
+                           data-media-url="{%  if media.is_html %}{{ MEDIA_URL }}{{ media.html_index_path }}{% else %}{{ media.file.url }}{% endif %}"
                            data-media-type="{{ media.file_type }}">
                     {% else %}
                         <a href="{% url 'media_library:media_detail' pk=media.pk %}">
