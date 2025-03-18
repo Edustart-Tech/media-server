@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import serializers
 
 from media_library.models import MediaCategory, MediaFile
@@ -5,6 +6,7 @@ from media_library.models import MediaCategory, MediaFile
 
 class MediaFileSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField(method_name='get_url')
+    url_without_host = serializers.SerializerMethodField(method_name='get_url_without_host')
     category_name = serializers.CharField(required=False, allow_blank=True, write_only=True)
 
     class Meta:
@@ -29,7 +31,18 @@ class MediaFileSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if obj.file is None:
             return None
+        if obj.is_html:
+            return request.build_absolute_uri(f"{settings.MEDIA_URL}{obj.html_index_path}")
+
         return request.build_absolute_uri(obj.file.url)
+
+    def get_url_without_host(self, obj):
+        request = self.context.get("request")
+        if obj.file is None:
+            return None
+        if obj.is_html:
+            return f"{settings.MEDIA_URL}{obj.html_index_path}"
+        return obj.file.url
 
     def validate(self, attrs):
         attrs.pop("category_name", None)
