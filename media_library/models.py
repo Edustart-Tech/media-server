@@ -14,6 +14,9 @@ from django.utils import timezone
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFill
 
+from media_library.utils import process_html_zip_file_now
+
+
 def upload_to(instance, filename):
     # Organize files by year/month
     now = timezone.now()
@@ -191,3 +194,7 @@ class MediaFile(models.Model):
                 self.file_type = 'other'
 
         super().save(*args, **kwargs)
+
+        media = process_html_zip_file_now(self)
+        if media:
+            media.save(update_fields=['html_index_path', 'original_zip_path', 'html_base_dir'])
