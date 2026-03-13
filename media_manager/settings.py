@@ -102,6 +102,7 @@ if USE_S3:
     AWS_S3_REGION_NAME = read_env("AWS_S3_REGION_NAME")
     AWS_S3_CUSTOM_DOMAIN = read_env("AWS_S3_CUSTOM_DOMAIN")
     AWS_S3_ENDPOINT_URL = read_env("AWS_S3_ENDPOINT_URL")
+    S3_ACCOUNT_ID = read_env("S3_ACCOUNT_ID")
     AWS_S3_FILE_OVERWRITE = False
     AWS_S3_SIGNATURE_VERSION = "s3v4"
 
@@ -262,8 +263,10 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 if USE_S3:
-    STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
-    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
+    STATIC_URL = (
+        f"https://{AWS_S3_CUSTOM_DOMAIN}/{S3_ACCOUNT_ID}/{AWS_LOCATION}/static/"
+    )
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{S3_ACCOUNT_ID}/{AWS_LOCATION}/media/"
 
 # Add to bottom of file
 IMAGEKIT_CACHEFILE_DIR = "thumbnails"
