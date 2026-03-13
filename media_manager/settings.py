@@ -106,6 +106,13 @@ if USE_S3:
     AWS_S3_FILE_OVERWRITE = False
     AWS_S3_SIGNATURE_VERSION = "s3v4"
 
+    # Mega.io S4 requires the Account ID and Bucket Name in the URL path prefix.
+    # django-storages uses AWS_S3_CUSTOM_DOMAIN to build asset URLs.
+    if S3_ACCOUNT_ID and AWS_STORAGE_BUCKET_NAME:
+        AWS_S3_CUSTOM_DOMAIN = (
+            f"{AWS_S3_CUSTOM_DOMAIN}/{S3_ACCOUNT_ID}/{AWS_STORAGE_BUCKET_NAME}"
+        )
+
     STORAGES = {
         "default": {
             "BACKEND": "storages.backends.s3.S3Storage",
@@ -125,16 +132,10 @@ if USE_S3:
         },
     }
 
-    # Construct URLs for Mega.io S4
-    # Format: https://{domain}/{account_id}/{bucket}/{prefix}/{static|media}/
-    S3_BASE_URL = (
-        f"https://{AWS_S3_CUSTOM_DOMAIN}/{S3_ACCOUNT_ID}/{AWS_STORAGE_BUCKET_NAME}/"
-    )
-    if AWS_LOCATION:
-        S3_BASE_URL = f"{S3_BASE_URL}{AWS_LOCATION}/"
-
-    STATIC_URL = f"{S3_BASE_URL}static/"
-    MEDIA_URL = f"{S3_BASE_URL}media/"
+    # Derive URLs from the now-complete CUSTOM_DOMAIN and the location prefix
+    BASE_LOCATION = f"{AWS_LOCATION}/" if AWS_LOCATION else ""
+    STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{BASE_LOCATION}static/"
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{BASE_LOCATION}media/"
 else:
     STORAGES = {
         "default": {
