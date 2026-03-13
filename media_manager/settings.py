@@ -9,12 +9,14 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
+
 import os
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
 
 def read_env(env_key, default=None, cast=str):
     env_value = os.getenv(env_key)
@@ -29,6 +31,7 @@ def read_env(env_key, default=None, cast=str):
     if cast is int:
         return int(env_value)
     return default
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -56,23 +59,23 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    'django_dramatiq',
-    'media_library',
-    'media_library.templatetags',
-    'imagekit',
-    'corsheaders',
+    "django_dramatiq",
+    "media_library",
+    "media_library.templatetags",
+    "imagekit",
+    "corsheaders",
     "rest_framework",
     "rest_framework.authtoken",
-    'django_cleanup.apps.CleanupConfig',
+    "django_cleanup.apps.CleanupConfig",
     "django_filters",
 ]
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
     ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.AllowAny",
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
@@ -83,15 +86,51 @@ REST_FRAMEWORK = {
     ),
 }
 
+# Storage configuration
+USE_S3 = read_env("USE_S3", False, bool)
+
+if USE_S3:
+    AWS_ACCESS_KEY_ID = read_env("AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = read_env("AWS_SECRET_ACCESS_KEY")
+    AWS_STORAGE_BUCKET_NAME = read_env("AWS_STORAGE_BUCKET_NAME")
+    AWS_S3_REGION_NAME = read_env("AWS_S3_REGION_NAME")
+    AWS_S3_CUSTOM_DOMAIN = read_env("AWS_S3_CUSTOM_DOMAIN")
+    AWS_S3_ENDPOINT_URL = read_env("AWS_S3_ENDPOINT_URL")
+    AWS_S3_FILE_OVERWRITE = False
+
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+                "location": "media",
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+                "location": "static",
+            },
+        },
+    }
+else:
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    'corsheaders.middleware.CorsMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    'media_manager.middleware.CrossOriginOpenerPolicyMiddleware',
+    "media_manager.middleware.CrossOriginOpenerPolicyMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    'media_library.middleware.HTMLSiteMiddleware',
+    "media_library.middleware.HTMLSiteMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -169,7 +208,7 @@ DRAMATIQ_BROKER = {
         "dramatiq.middleware.Retries",
         "django_dramatiq.middleware.DbConnectionsMiddleware",
         "django_dramatiq.middleware.AdminMiddleware",
-    ]
+    ],
 }
 
 # Defines which database should be used to store task results
@@ -180,7 +219,7 @@ DRAMATIQ_RESULT_BACKEND = {
     },
     "MIDDLEWARE_OPTIONS": {
         "result_ttl": 60000  # 1 minute
-    }
+    },
 }
 
 
@@ -195,7 +234,7 @@ USE_I18N = True
 
 USE_TZ = True
 
-AUTH_USER_MODEL = 'media_library.User'
+AUTH_USER_MODEL = "media_library.User"
 
 
 # Static files (CSS, JavaScript, Images)
@@ -208,11 +247,15 @@ STATICFILES_DIRS = [
 STATIC_ROOT = BASE_DIR / "static/"
 
 # Media settings
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+if USE_S3:
+    STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
 
 # Add to bottom of file
-IMAGEKIT_CACHEFILE_DIR = 'thumbnails'
+IMAGEKIT_CACHEFILE_DIR = "thumbnails"
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
@@ -224,34 +267,34 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # )
 
 CORS_ALLOW_ALL_ORIGINS = True  # For development; restrict in production
-CORS_URLS_REGEX = r'^/media-library/html-site/.*$'
+CORS_URLS_REGEX = r"^/media-library/html-site/.*$"
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
 ]
 
 # Allow all headers
 CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
 ]
 
 # Content Security Policy
 CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'", "'unsafe-eval'")
 CSP_FRAME_ANCESTORS = ("'self'",)
-CSP_INCLUDE_NONCE_IN = ['script-src']
+CSP_INCLUDE_NONCE_IN = ["script-src"]
 
 
 SESSION_COOKIE_SECURE = read_env("SESSION_COOKIE_SECURE", False, bool)
@@ -260,4 +303,3 @@ CSRF_TRUSTED_ORIGINS = read_env("CSRF_TRUSTED_ORIGINS", [], list)
 
 
 X_FRAME_OPTIONS = "ALLOWALL"
-

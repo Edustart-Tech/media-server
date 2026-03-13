@@ -23,3 +23,5 @@ watchdog==6.0.0
 watchdog_gevent==0.2.1
 zope.event==5.0
 zope.interface==7.2
+django-storages[s3]==1.14.5
+boto3==1.36.26
