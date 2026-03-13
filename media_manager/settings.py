@@ -124,6 +124,17 @@ if USE_S3:
             },
         },
     }
+
+    # Construct URLs for Mega.io S4
+    # Format: https://{domain}/{account_id}/{bucket}/{prefix}/{static|media}/
+    S3_BASE_URL = (
+        f"https://{AWS_S3_CUSTOM_DOMAIN}/{S3_ACCOUNT_ID}/{AWS_STORAGE_BUCKET_NAME}/"
+    )
+    if AWS_LOCATION:
+        S3_BASE_URL = f"{S3_BASE_URL}{AWS_LOCATION}/"
+
+    STATIC_URL = f"{S3_BASE_URL}static/"
+    MEDIA_URL = f"{S3_BASE_URL}media/"
 else:
     STORAGES = {
         "default": {
@@ -133,6 +144,8 @@ else:
             "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
         },
     }
+    STATIC_URL = "static/"
+    MEDIA_URL = "/media/"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -252,21 +265,13 @@ AUTH_USER_MODEL = "media_library.User"
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = "static/"
 STATICFILES_DIRS = [
     BASE_DIR / "project_static",
 ]
 STATIC_ROOT = BASE_DIR / "static/"
 
 # Media settings
-MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
-
-if USE_S3:
-    STATIC_URL = (
-        f"https://{AWS_S3_CUSTOM_DOMAIN}/{S3_ACCOUNT_ID}/{AWS_LOCATION}/static/"
-    )
-    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{S3_ACCOUNT_ID}/{AWS_LOCATION}/media/"
 
 # Add to bottom of file
 IMAGEKIT_CACHEFILE_DIR = "thumbnails"
