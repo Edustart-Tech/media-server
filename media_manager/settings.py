@@ -93,22 +93,33 @@ if USE_S3:
     AWS_ACCESS_KEY_ID = read_env("AWS_ACCESS_KEY_ID")
     AWS_SECRET_ACCESS_KEY = read_env("AWS_SECRET_ACCESS_KEY")
     AWS_STORAGE_BUCKET_NAME = read_env("AWS_STORAGE_BUCKET_NAME")
+    # Handle cases where bucket name might contain a slash (e.g. "bucket/prefix")
+    if "/" in AWS_STORAGE_BUCKET_NAME:
+        AWS_STORAGE_BUCKET_NAME, AWS_LOCATION = AWS_STORAGE_BUCKET_NAME.split("/", 1)
+    else:
+        AWS_LOCATION = ""
+
     AWS_S3_REGION_NAME = read_env("AWS_S3_REGION_NAME")
     AWS_S3_CUSTOM_DOMAIN = read_env("AWS_S3_CUSTOM_DOMAIN")
     AWS_S3_ENDPOINT_URL = read_env("AWS_S3_ENDPOINT_URL")
     AWS_S3_FILE_OVERWRITE = False
+    AWS_S3_SIGNATURE_VERSION = "s3v4"
 
     STORAGES = {
         "default": {
             "BACKEND": "storages.backends.s3.S3Storage",
             "OPTIONS": {
-                "location": "media",
+                "location": os.path.join(AWS_LOCATION, "media")
+                if AWS_LOCATION
+                else "media",
             },
         },
         "staticfiles": {
             "BACKEND": "storages.backends.s3.S3Storage",
             "OPTIONS": {
-                "location": "static",
+                "location": os.path.join(AWS_LOCATION, "static")
+                if AWS_LOCATION
+                else "static",
             },
         },
     }
