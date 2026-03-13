@@ -2,57 +2,73 @@ import logging
 import os
 import zipfile
 
-from django.conf import settings
 
 logger = logging.getLogger('media_library')
 
 
 def process_html_zip_file_now(media):
+    """
+    Extracts HTML zip files into storage and identifies the index.html path.
+    Works with both local and S3 storage.
+    """
+    from django.core.files.storage import default_storage
+    import io
+
     # Skip if not an HTML zip or already processed
     if not media.is_html or media.html_index_path:
         return
 
-    # Get the file path
-    file_path = media.file.path
-    if not os.path.exists(file_path):
-        logger.warning(f"File not found: {file_path}")
-        return
-
-    # Store original zip path
-    media.original_zip_path = file_path
-
-    # Create extraction directory - use media_id to avoid conflicts
-    extract_dir = os.path.join(settings.MEDIA_ROOT, f'html_sites/{media.id}')
-    os.makedirs(extract_dir, exist_ok=True)
-
-    logger.info(f"Extracting ZIP file to {extract_dir}")
+    logger.info(f"Processing HTML ZIP for media {media.id}")
 
     try:
-        # Extract the zip file
-        with zipfile.ZipFile(file_path, 'r') as zip_ref:
-            zip_ref.extractall(extract_dir)
-
-        # Find index.html (could be in the root or in a subdirectory)
-        index_path = None
-        base_dir = None
-        for root, dirs, files in os.walk(extract_dir):
-            if 'index.html' in files:
-                # Get the relative path to MEDIA_ROOT
-                rel_path = os.path.relpath(os.path.join(root, 'index.html'), settings.MEDIA_ROOT)
-                index_path = rel_path
-                # Also store the base directory of the index.html file
-                base_dir = os.path.relpath(root, settings.MEDIA_ROOT)
-                break
+        # Get the zip file content
+        # Use media.file.open() to handle both local and S3
+        with media.file.open('rb') as f:
+            zip_content = f.read()
+        
+        # Open the ZIP file from memory
+        with zipfile.ZipFile(io.BytesIO(zip_content), 'r') as zip_ref:
+            # Create extraction directory prefix
+            extract_base = f'html_sites/{media.id}'
+            
+            index_path = None
+            base_dir = None
+            
+            # Iterate through all files in the ZIP
+            for file_info in zip_ref.infolist():
+                if file_info.is_dir():
+                    continue
+                
+                # Construct the target path in storage
+                target_path = os.path.join(extract_base, file_info.filename)
+                
+                # Save the file to storage
+                with zip_ref.open(file_info) as source_file:
+                    if default_storage.exists(target_path):
+                        default_storage.delete(target_path)
+                    default_storage.save(target_path, source_file)
+                
+                # Identify index.html
+                if file_info.filename.endswith('index.html'):
+                    # The first index.html found (or highest in hierarchy)
+                    if index_path is None or len(file_info.filename) < len(index_path):
+                        index_path = target_path
+                        base_dir = os.path.dirname(target_path)
 
         # Update media file with paths
         if index_path:
             media.html_index_path = index_path
-            # Store the base directory of the HTML site
             media.html_base_dir = base_dir
+            media.is_processed = True
+            logger.info(f"Successfully processed HTML site: index={index_path}")
             return media
         else:
-            logger.error(f"No index.html found in ZIP file: {file_path}")
+            logger.error(f"No index.html found in ZIP for media {media.id}")
+            media.processing_error = "No index.html found in ZIP file"
 
     except Exception as e:
-        logger.error(f"Error extracting ZIP file: {e}")
+        logger.error(f"Error processing HTML ZIP for media {media.id}: {e}")
+        media.processing_error = str(e)
         raise
+
+    return media

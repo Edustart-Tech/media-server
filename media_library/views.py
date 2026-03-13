@@ -8,12 +8,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.urls import reverse
 from django.db.models import Q
-from django.views.static import serve
 
 from .models import MediaFile, MediaCategory
-from .forms import MediaFileForm, MediaFileCategoryForm
+from .forms import MediaFileForm
 from .tasks import logger
 
 
@@ -134,7 +132,9 @@ def media_category(request, slug):
 def serve_html_site(request, media_id, path=''):
     """
     Serve HTML website files with proper path resolution and security headers.
+    Works with both local and S3 storage.
     """
+    from django.core.files.storage import default_storage
     try:
         media_file = get_object_or_404(MediaFile, pk=media_id)
 
@@ -144,35 +144,32 @@ def serve_html_site(request, media_id, path=''):
 
         # If no specific path is requested, serve the index.html
         if not path:
-            # Find the relative path from the base directory to the index.html file
-            rel_path = os.path.relpath(
-                os.path.join(settings.MEDIA_ROOT, media_file.html_index_path),
-                os.path.join(settings.MEDIA_ROOT, media_file.html_base_dir)
+            path = os.path.relpath(
+                media_file.html_index_path,
+                media_file.html_base_dir
             )
-            path = rel_path
 
-        # Construct the full path to the requested file
-        file_path = os.path.normpath(os.path.join(
-            settings.MEDIA_ROOT, media_file.html_base_dir, path
+        # Construct the relative path within the storage
+        # Note: default_storage uses paths relative to MEDIA_ROOT
+        relative_path = os.path.normpath(os.path.join(
+            media_file.html_base_dir, path
         ))
 
         # Security check to prevent directory traversal attacks
-        base_path = os.path.normpath(os.path.join(
-            settings.MEDIA_ROOT, media_file.html_base_dir
-        ))
-        if not os.path.abspath(file_path).startswith(os.path.abspath(base_path)):
+        if not relative_path.startswith(media_file.html_base_dir):
             raise Http404("Invalid path")
 
-        # Check if the requested file exists
-        if not os.path.exists(file_path) or os.path.isdir(file_path):
+        # Check if the requested file exists in storage
+        if not default_storage.exists(relative_path):
             raise Http404("File not found")
 
         # Determine the content type
-        content_type, encoding = mimetypes.guess_type(file_path)
+        content_type, _ = mimetypes.guess_type(relative_path)
         content_type = content_type or 'application/octet-stream'
 
-        # Create a response with the file content
-        response = FileResponse(open(file_path, 'rb'), content_type=content_type)
+        # Create a response with the file content from storage
+        file_obj = default_storage.open(relative_path, 'rb')
+        response = FileResponse(file_obj, content_type=content_type)
 
         # Add security headers to allow loading assets from same origin
         response['X-Frame-Options'] = 'SAMEORIGIN'
