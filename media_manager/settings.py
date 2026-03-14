@@ -137,16 +137,21 @@ if USE_S3:
     STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{BASE_LOCATION}static/"
     MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{BASE_LOCATION}media/"
 else:
-    STORAGES = {
-        "default": {
-            "BACKEND": "django.core.files.storage.FileSystemStorage",
-        },
-        "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-        },
-    }
-    STATIC_URL = "/static/"
+    # STORAGES = {
+    #     "default": {
+    #         "BACKEND": "django.core.files.storage.FileSystemStorage",
+    #     },
+    #     "staticfiles": {
+    #         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    #     },
+    # }
+    STATIC_URL = "static/"
     MEDIA_URL = "/media/"
+    # STATIC_URL = "static/"
+    # STATICFILES_DIRS = [
+    #     BASE_DIR / "project_static",
+    # ]
+    # STATIC_ROOT = BASE_DIR / "static/"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
