@@ -159,24 +159,33 @@ def serve_html_site(request, media_id, path=''):
         if not relative_path.startswith(media_file.html_base_dir):
             raise Http404("Invalid path")
 
-        # Check if the requested file exists in storage
-        if not default_storage.exists(relative_path):
-            raise Http404("File not found")
-
         # Determine the content type
         content_type, _ = mimetypes.guess_type(relative_path)
         content_type = content_type or 'application/octet-stream'
 
-        # Create a response with the file content from storage
-        file_obj = default_storage.open(relative_path, 'rb')
-        response = FileResponse(file_obj, content_type=content_type)
+        try:
+            # Create a response with the file content from storage
+            # We skip .exists() to reduce S3 latency (1 call instead of 2)
+            file_obj = default_storage.open(relative_path, 'rb')
+            response = FileResponse(file_obj, content_type=content_type)
+        except Exception:
+            # If the file doesn't exist or S3 fails
+            raise Http404("File not found")
 
         # Add security headers to allow loading assets from same origin
         response['X-Frame-Options'] = 'SAMEORIGIN'
         response['Content-Security-Policy'] = "frame-ancestors 'self'"
 
-        # Disable caching for development (optional)
-        if settings.DEBUG:
+        # Add caching headers for better performance on S3
+        if not settings.DEBUG:
+            # For assets (models, textures, scripts, etc.), cache for a long time (30 days)
+            # For HTML files, cache for a short time (5 minutes)
+            if content_type == 'text/html':
+                response['Cache-Control'] = 'public, max-age=300'
+            else:
+                response['Cache-Control'] = 'public, max-age=2592000'
+        else:
+            # Disable caching for development
             response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
             response['Pragma'] = 'no-cache'
             response['Expires'] = '0'
