@@ -145,7 +145,7 @@ else:
             "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
         },
     }
-    STATIC_URL = "static/"
+    STATIC_URL = "/static/"
     MEDIA_URL = "/media/"
 
 MIDDLEWARE = [

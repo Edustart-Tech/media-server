@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  nginx-s3-proxy:
+    image: nginx:alpine
+    container_name: nginx-s3-proxy
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    restart: unless-stopped
